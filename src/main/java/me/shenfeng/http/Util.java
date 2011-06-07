@@ -99,4 +99,68 @@ public class Util {
 		}
 		return baos.toByteArray();
 	}
+
+	/**
+	 * same as {@link Util#subArray(byte[], byte[], int)},except find from end to
+	 * start;
+	 * 
+	 * @param data
+	 *            to search from
+	 * @param tofind
+	 *            target
+	 * @param start
+	 *            start index
+	 * @return index of the first find if find, data.length if not find
+	 */
+	public static int subArrayFromEnd(byte[] data, byte[] tofind, int start) {
+		int index = data.length;
+		outer: for (int i = data.length - tofind.length; i > 0; --i) {
+	
+			for (int j = 0; j < tofind.length;) {
+				if (data[i] == tofind[j]) {
+					++i;
+					++j;
+					if (j == tofind.length) {
+						index = i - tofind.length;
+						break outer;
+					}
+				} else {
+					i = i - j; // step back
+					break;
+				}
+			}
+		}
+		return index;
+	}
+
+	/**
+	 * 
+	 * @param data
+	 *            to search from
+	 * @param tofind
+	 *            target
+	 * @param start
+	 *            start index
+	 * @return index of the first find if find, data.length if not find
+	 */
+	public static int subArray(byte[] data, byte[] tofind, int start) {
+		int index = data.length;
+		outer: for (int i = start; i < data.length; ++i) {
+	
+			for (int j = 0; j < tofind.length;) {
+				if (data[i] == tofind[j]) {
+					++i;
+					++j;
+					if (j == tofind.length) {
+						index = i - tofind.length;
+						break outer;
+					}
+				} else {
+					i = i - j; // step back
+					break;
+				}
+			}
+		}
+		return index;
+	}
 }
