@@ -18,7 +18,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.butterfly.nioserver.util.Utils;
+import com.butterfly.nioserver.util.Util;
 
 public class NioHttpServer implements Runnable {
 
@@ -26,14 +26,14 @@ public class NioHttpServer implements Runnable {
 
 	public static void main(String[] args) throws IOException {
 
-	    String root = new File(".").getAbsolutePath();
-        int port = 8080;
-        if (args.length > 0)
-            port = Integer.parseInt(args[0]);
+		String root = new File(".").getAbsolutePath();
+		int port = 8080;
+		if (args.length > 0)
+			port = Integer.parseInt(args[0]);
 
-        if (args.length > 1)
-            root = args[1];
-        System.out.println(port+"\t"+root);
+		if (args.length > 1)
+			root = args[1];
+		logger.info("listenning at *." + port + "; root: " + root);
 		NioHttpServer server = new NioHttpServer(null, port);
 		int cpu = Runtime.getRuntime().availableProcessors();
 		ButterflySoftCache cache = new ButterflySoftCache();
@@ -65,7 +65,7 @@ public class NioHttpServer implements Runnable {
 
 	private void accept(SelectionKey key) throws IOException {
 		SocketChannel socketChannel = serverChannel.accept();
-		logger.info("new connection:\t" + socketChannel);
+		// logger.info("new connection:\t" + socketChannel);
 		socketChannel.configureBlocking(false);
 		socketChannel.register(selector, SelectionKey.OP_READ);
 	}
@@ -99,9 +99,11 @@ public class NioHttpServer implements Runnable {
 
 		int worker = socketChannel.hashCode() % requestHandlers.size();
 		if (logger.isDebugEnabled()) {
-			logger.debug(selector.keys().size() + "\t" + worker + "\t" + socketChannel);
+			logger.debug(selector.keys().size() + "\t" + worker + "\t"
+					+ socketChannel);
 		}
-		requestHandlers.get(worker).processData(socketChannel, readBuffer.array(), numRead);
+		requestHandlers.get(worker).processData(socketChannel,
+				readBuffer.array(), numRead);
 	}
 
 	@Override
@@ -124,7 +126,8 @@ public class NioHttpServer implements Runnable {
 				}
 
 				selector.select();
-				Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
+				Iterator<SelectionKey> selectedKeys = selector.selectedKeys()
+						.iterator();
 				while (selectedKeys.hasNext()) {
 					key = selectedKeys.next();
 					selectedKeys.remove();
@@ -142,7 +145,7 @@ public class NioHttpServer implements Runnable {
 			} catch (Exception e) {
 				if (key != null) {
 					key.cancel();
-					Utils.closeQuietly(key.channel());
+					Util.closeQuietly(key.channel());
 				}
 				logger.error("closed" + key.channel(), e);
 			}
@@ -152,7 +155,8 @@ public class NioHttpServer implements Runnable {
 
 	public void send(SocketChannel socket, byte[] data) {
 		synchronized (changeRequests) {
-			changeRequests.add(new ChangeRequest(socket, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
+			changeRequests.add(new ChangeRequest(socket,
+					ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
 			synchronized (pendingSent) {
 				List<ByteBuffer> queue = pendingSent.get(socket);
 				if (queue == null) {

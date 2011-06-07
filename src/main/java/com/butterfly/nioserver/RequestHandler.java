@@ -24,17 +24,15 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.WeakHashMap;
 
-import javax.activation.MimetypesFileTypeMap;
-
 import org.apache.log4j.Logger;
 
-import com.butterfly.nioserver.ButterflySoftCache.CacheEntry;
 import com.butterfly.nioserver.RequestHeaderHandler.Verb;
-import com.butterfly.nioserver.util.Utils;
+import com.butterfly.nioserver.util.Util;
 
 public class RequestHandler implements Runnable {
 
-	private static final DateFormat formater = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+	private static final DateFormat formater = new SimpleDateFormat(
+			"EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 	static {
 		formater.setTimeZone(TimeZone.getTimeZone("GMT"));
 	}
@@ -57,7 +55,8 @@ public class RequestHandler implements Runnable {
 	 * @param cache
 	 *            cache implementation
 	 */
-	public RequestHandler(NioHttpServer server, String wwwroot, ButterflySoftCache cache) {
+	public RequestHandler(NioHttpServer server, String wwwroot,
+			ButterflySoftCache cache) {
 		this.cache = cache;
 		this.serverRoot = wwwroot;
 		this.server = server;
@@ -70,7 +69,8 @@ public class RequestHandler implements Runnable {
 
 		synchronized (pendingRequestSegment) {
 			// add data
-			pendingRequestSegment.add(new RequestSegmentHeader(client, dataCopy));
+			pendingRequestSegment
+					.add(new RequestSegmentHeader(client, dataCopy));
 			pendingRequestSegment.notify();
 		}
 	}
@@ -80,7 +80,6 @@ public class RequestHandler implements Runnable {
 
 		RequestSegmentHeader requestData = null;
 		RequestHeaderHandler header = null;
-		CacheEntry entry = null;
 		HttpResponceHeaderBuilder builder = new HttpResponceHeaderBuilder();
 		byte[] head = null;
 		byte[] body = null;
@@ -110,57 +109,43 @@ public class RequestHandler implements Runnable {
 				if (header.appendSegment(requestData.data)) {
 					file = serverRoot + header.getResouce();
 					currentFile = new File(file);
-					mime = new MimetypesFileTypeMap().getContentType(currentFile);
-					logger.info(currentFile+"\t"+mime);
+					mime = Util.getContentType(currentFile);
+					// logger.info(currentFile + "\t" + mime);
 					acceptEncoding = header.getHeader(ACCEPT_ENCODING);
 					// gzip text
-					zip = mime.contains("text") && acceptEncoding != null
-							&& (acceptEncoding.contains("gzip") || acceptEncoding.contains("gzip"));
+					zip = mime.contains("text")
+							&& acceptEncoding != null
+							&& (acceptEncoding.contains("gzip") || acceptEncoding
+									.contains("gzip"));
+					builder.clear(); // get ready for next request;
+
+					// always keep alive
+					builder.addHeader(CONNECTION, KEEP_ALIVE);
+					builder.addHeader(CONTENT_TYPE, mime);
+
+					// response body byte, exception throws here
+					body = Util.file2ByteArray(currentFile, zip);
+					builder.addHeader(CONTENT_LENGTH, body.length);
 					if (zip) {
-						entry = cache.get(file + GZIP);
-					} else {
-						entry = cache.get(file);
+						// add zip header
+						builder.addHeader(CONTENT_ENCODING, GZIP);
 					}
 
-					// miss the cache
-					if (entry == null) {
-						builder.clear(); // get ready for next request;
+					// last modified header
+					lastModified = new Date(currentFile.lastModified());
+					builder.addHeader(LAST_MODIFIED,
+							formater.format(lastModified));
 
-						logger.info("miss the cache " + file);
+					// response header byte
+					head = builder.getHeader();
 
-						// always keep alive
-						builder.addHeader(CONNECTION, KEEP_ALIVE);
-						builder.addHeader(CONTENT_TYPE, mime);
-
-						// response body byte, exception throws here
-						body = Utils.file2ByteArray(currentFile, zip);
-						builder.addHeader(CONTENT_LENGTH, body.length);
-						if (zip) {
-							// add zip header
-							builder.addHeader(CONTENT_ENCODING, GZIP);
-						}
-
-						// last modified header
-						lastModified = new Date(currentFile.lastModified());
-						builder.addHeader(LAST_MODIFIED, formater.format(lastModified));
-
-						// response header byte
-						head = builder.getHeader();
-						// add to the cache
-						if (zip)
-							file = file + GZIP;
-						cache.put(file, head, body);
-					}
-					// cache is hit
-					else {
-						logger.debug("cache is hit" + file);
-						body = entry.body;
-						head = entry.header;
-					}
 					// data is prepared, send out to the client
 					server.send(requestData.client, head);
 					if (body != null && header.getVerb() == Verb.GET)
 						server.send(requestData.client, body);
+
+					logger.info("200" + header.getResouce());
+
 				}
 			} catch (IOException e) {
 				builder.addHeader(CONTENT_LENGTH, 0);
@@ -169,7 +154,7 @@ public class RequestHandler implements Runnable {
 				server.send(requestData.client, head);
 				// cache 404 if case client make a mistake again
 				cache.put(file, head, body);
-				logger.error("404 error", e);
+				logger.error("404 " + header.getResouce());
 
 			} catch (Exception e) {
 				// any other, it's a 505 error
