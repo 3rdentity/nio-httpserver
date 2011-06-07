@@ -1,10 +1,10 @@
-package com.butterfly.nioserver;
+package me.shenfeng.http;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class HttpResponceHeaderBuilder {
+public class ResponceHeaderBuilder {
 	public static final String OK_200 = "HTTP/1.1 200 OK";
 	public static final String NEWLINE = "\r\n";
 	public static final String NOT_FOUND_404 = "HTTP/1.1 404 Not Find";
@@ -24,11 +24,11 @@ public class HttpResponceHeaderBuilder {
 	/**
 	 * status default to 200
 	 */
-	public HttpResponceHeaderBuilder() {
+	public ResponceHeaderBuilder() {
 		status = OK_200;
 	}
 
-	public HttpResponceHeaderBuilder addHeader(String key, Object value) {
+	public ResponceHeaderBuilder addHeader(String key, Object value) {
 		header.put(key, value);
 		return this;
 	}
@@ -42,7 +42,7 @@ public class HttpResponceHeaderBuilder {
 		return toString().getBytes();
 	}
 
-	public HttpResponceHeaderBuilder setStatus(String status) {
+	public ResponceHeaderBuilder setStatus(String status) {
 		this.status = status;
 		return this;
 	}

@@ -1,4 +1,4 @@
-package com.butterfly.nioserver;
+package me.shenfeng.http;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class RequestHeaderHandler {
+public class RequestHeaderDecoder {
 
 	public static enum Verb {
 		CONNECT, DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT, TRACE

@@ -1,12 +1,13 @@
-package com.butterfly.nioserver;
+package me.shenfeng.http;
 
 import java.io.File;
+
+import me.shenfeng.http.Util;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.butterfly.nioserver.util.Util;
 
 public class UtilTest {
 

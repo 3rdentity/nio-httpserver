@@ -1,4 +1,4 @@
-package com.butterfly.nioserver;
+package me.shenfeng.http;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +18,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.butterfly.nioserver.util.Util;
 
 public class NioHttpServer implements Runnable {
 

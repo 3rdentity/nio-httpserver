@@ -1,2 +1,2 @@
 #!/bin/bash
-java -cp target/*: com.butterfly.nioserver.NioHttpServer $@
+mvn package && java -cp target/*: me.shenfeng.http.NioHttpServer $@

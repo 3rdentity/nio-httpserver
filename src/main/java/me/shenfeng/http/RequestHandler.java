@@ -1,15 +1,15 @@
-package com.butterfly.nioserver;
+package me.shenfeng.http;
 
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.ACCEPT_ENCODING;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.CONNECTION;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.CONTENT_ENCODING;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.CONTENT_LENGTH;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.CONTENT_TYPE;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.GZIP;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.KEEP_ALIVE;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.LAST_MODIFIED;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.NOT_FOUND_404;
-import static com.butterfly.nioserver.HttpResponceHeaderBuilder.SERVER_ERROR_500;
+import static me.shenfeng.http.ResponceHeaderBuilder.ACCEPT_ENCODING;
+import static me.shenfeng.http.ResponceHeaderBuilder.CONNECTION;
+import static me.shenfeng.http.ResponceHeaderBuilder.CONTENT_ENCODING;
+import static me.shenfeng.http.ResponceHeaderBuilder.CONTENT_LENGTH;
+import static me.shenfeng.http.ResponceHeaderBuilder.CONTENT_TYPE;
+import static me.shenfeng.http.ResponceHeaderBuilder.GZIP;
+import static me.shenfeng.http.ResponceHeaderBuilder.KEEP_ALIVE;
+import static me.shenfeng.http.ResponceHeaderBuilder.LAST_MODIFIED;
+import static me.shenfeng.http.ResponceHeaderBuilder.NOT_FOUND_404;
+import static me.shenfeng.http.ResponceHeaderBuilder.SERVER_ERROR_500;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.WeakHashMap;
 
+import me.shenfeng.http.RequestHeaderDecoder.Verb;
+
 import org.apache.log4j.Logger;
 
-import com.butterfly.nioserver.RequestHeaderHandler.Verb;
-import com.butterfly.nioserver.util.Util;
 
 public class RequestHandler implements Runnable {
 
@@ -41,7 +41,7 @@ public class RequestHandler implements Runnable {
 	private File currentFile;
 	private Date lastModified;
 	private List<RequestSegmentHeader> pendingRequestSegment = new ArrayList<RequestSegmentHeader>();
-	private Map<SocketChannel, RequestHeaderHandler> requestMap = new WeakHashMap<SocketChannel, RequestHeaderHandler>();
+	private Map<SocketChannel, RequestHeaderDecoder> requestMap = new WeakHashMap<SocketChannel, RequestHeaderDecoder>();
 	private NioHttpServer server;
 	private String serverRoot;
 	private String acceptEncoding;
@@ -79,8 +79,8 @@ public class RequestHandler implements Runnable {
 	public void run() {
 
 		RequestSegmentHeader requestData = null;
-		RequestHeaderHandler header = null;
-		HttpResponceHeaderBuilder builder = new HttpResponceHeaderBuilder();
+		RequestHeaderDecoder header = null;
+		ResponceHeaderBuilder builder = new ResponceHeaderBuilder();
 		byte[] head = null;
 		byte[] body = null;
 		String file = null;
@@ -102,7 +102,7 @@ public class RequestHandler implements Runnable {
 
 			header = requestMap.get(requestData.client);
 			if (header == null) {
-				header = new RequestHeaderHandler();
+				header = new RequestHeaderDecoder();
 				requestMap.put(requestData.client, header);
 			}
 			try {
