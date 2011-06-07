@@ -28,6 +28,7 @@ public class UtilTest {
 	public void testGetContentType() {
 		assertEquals("text/css", Util.getContentType(f1));
 		assertEquals("application/octet-stream", Util.getContentType(f2));
+		assertEquals("text/html", Util.getContentType(new File("/")));
 	}
 
 	@Test

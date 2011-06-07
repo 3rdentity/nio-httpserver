@@ -9,14 +9,42 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+
+import com.samskivert.mustache.Mustache;
+
+class FileItem implements Comparable<FileItem>{
+	public final String href;
+	public final String name;
+	public final String size;
+	public final String mtime;
+
+	public FileItem(String href, String name, String size, String mtime) {
+		this.href = href;
+		this.name = name;
+		this.size = size;
+		this.mtime = mtime;
+	}
+	@Override
+	public int compareTo(FileItem o) {
+		return name.compareTo(o.name); 
+	}
+}
 
 public class Util {
 
 	private static String defaultType = "application/octet-stream";
 	private static String mapFile = "mime.types";
+	private static String indexTmpl = "index.tpl";
+	private static DateFormat df = new SimpleDateFormat("yyyy-HH-dd HH:mm:ss");
 
 	public static String getExtension(File file) {
 		String name = file.getName();
@@ -28,7 +56,60 @@ public class Util {
 
 	}
 
+	public static Object listDir(final File folder) {
+		File[] files = folder.listFiles();
+		final List<FileItem> fileItems = new ArrayList<FileItem>();
+		for (File file : files) {
+			String href = file.isDirectory() ? file.getName() + "/" : file
+					.getName();
+			String mtime = df.format(new Date(file.lastModified()));
+			fileItems.add(new FileItem(href, file.getName(),
+					file.length() + "", mtime));
+		}
+		Collections.sort(fileItems);
+		return new Object() {
+			Object files = fileItems;
+			Object dir = folder.getName();
+		};
+	}
+
+	public static byte[] directoryList(File dir, boolean zip) {
+		StringBuilder sb = new StringBuilder(300);
+
+		InputStream ins = Util.class.getClassLoader().getResourceAsStream(
+				indexTmpl);
+		BufferedReader br = new BufferedReader(new InputStreamReader(ins));
+		String line = null;
+		try {
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+				sb.append("\n");
+			}
+		} catch (IOException e) {
+		}
+
+		String html = Mustache.compiler().compile(sb.toString())
+				.execute(listDir(dir));
+
+		if (zip) {
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream(8912);
+				GZIPOutputStream gzip = new GZIPOutputStream(baos);
+				gzip.write(html.getBytes());
+				closeQuietly(gzip);
+				return baos.toByteArray();
+			} catch (IOException e) {
+			}
+		} else {
+			return html.getBytes();
+		}
+		return new byte[] {};
+	}
+
 	public static String getContentType(File file) {
+
+		if (file.isDirectory())
+			return "text/html";
 
 		InputStream ins = Util.class.getClassLoader().getResourceAsStream(
 				mapFile);
@@ -74,35 +155,41 @@ public class Util {
 	 */
 	public static byte[] file2ByteArray(File file, boolean zip)
 			throws IOException {
-		InputStream is = null;
-		GZIPOutputStream gzip = null;
-		byte[] buffer = new byte[8912];
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(8912);
-		try {
-			if (zip) {
-				gzip = new GZIPOutputStream(baos);
-			}
-			is = new BufferedInputStream(new FileInputStream(file));
-			int read = 0;
-			while ((read = is.read(buffer)) != -1) {
+		if (file.isFile()) {
+			InputStream is = null;
+			GZIPOutputStream gzip = null;
+			byte[] buffer = new byte[8912];
+			ByteArrayOutputStream baos = new ByteArrayOutputStream(8912);
+			try {
 				if (zip) {
-					gzip.write(buffer, 0, read);
-				} else {
-					baos.write(buffer, 0, read);
+					gzip = new GZIPOutputStream(baos);
 				}
+				is = new BufferedInputStream(new FileInputStream(file));
+				int read = 0;
+				while ((read = is.read(buffer)) != -1) {
+					if (zip) {
+						gzip.write(buffer, 0, read);
+					} else {
+						baos.write(buffer, 0, read);
+					}
+				}
+			} catch (IOException e) {
+				throw e;
+			} finally {
+				closeQuietly(is);
+				closeQuietly(gzip);
 			}
-		} catch (IOException e) {
-			throw e;
-		} finally {
-			closeQuietly(is);
-			closeQuietly(gzip);
+			return baos.toByteArray();
+		} else if (file.isDirectory()) {
+			return directoryList(file, zip);
+		} else {
+			return new byte[] {};
 		}
-		return baos.toByteArray();
 	}
 
 	/**
-	 * same as {@link Util#subArray(byte[], byte[], int)},except find from end to
-	 * start;
+	 * same as {@link Util#subArray(byte[], byte[], int)},except find from end
+	 * to start;
 	 * 
 	 * @param data
 	 *            to search from
@@ -115,7 +202,7 @@ public class Util {
 	public static int subArrayFromEnd(byte[] data, byte[] tofind, int start) {
 		int index = data.length;
 		outer: for (int i = data.length - tofind.length; i > 0; --i) {
-	
+
 			for (int j = 0; j < tofind.length;) {
 				if (data[i] == tofind[j]) {
 					++i;
@@ -146,7 +233,7 @@ public class Util {
 	public static int subArray(byte[] data, byte[] tofind, int start) {
 		int index = data.length;
 		outer: for (int i = start; i < data.length; ++i) {
-	
+
 			for (int j = 0; j < tofind.length;) {
 				if (data[i] == tofind[j]) {
 					++i;

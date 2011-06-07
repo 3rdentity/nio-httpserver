@@ -84,7 +84,7 @@ public class NioHttpServer implements Runnable {
 			// the remote forcibly closed the connection
 			key.cancel();
 			socketChannel.close();
-			logger.info("closed by exception" + socketChannel);
+//			logger.info("closed by exception" + socketChannel);
 			return;
 		}
 
@@ -92,7 +92,7 @@ public class NioHttpServer implements Runnable {
 			// remote entity shut the socket down cleanly.
 			socketChannel.close();
 			key.cancel();
-			logger.info("closed by shutdown" + socketChannel);
+//			logger.info("closed by shutdown" + socketChannel);
 			return;
 		}
 

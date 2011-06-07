@@ -144,7 +144,7 @@ public class RequestHandler implements Runnable {
 					if (body != null && header.getVerb() == Verb.GET)
 						server.send(requestData.client, body);
 
-					logger.info("200" + header.getResouce());
+					logger.info(header.getResouce() + " 200");
 
 				}
 			} catch (IOException e) {
@@ -154,7 +154,7 @@ public class RequestHandler implements Runnable {
 				server.send(requestData.client, head);
 				// cache 404 if case client make a mistake again
 				cache.put(file, head, body);
-				logger.error("404 " + header.getResouce());
+				logger.error(header.getResouce() + " 404");
 
 			} catch (Exception e) {
 				// any other, it's a 505 error

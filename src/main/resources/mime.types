@@ -1,4 +1,5 @@
 css	text/css
+scss text/plain
 html text/html 
 htm text/html
 js	application/x-javascript
@@ -6,3 +7,6 @@ git	image/gif
 png	image/png
 jpg	image/jpeg
 jpeg	image/jpeg
+clj	text/plain
+conf text/plain
+xml	text/xml
